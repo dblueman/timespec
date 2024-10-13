@@ -5,13 +5,14 @@ import (
    "fmt"
    "regexp"
    "strconv"
+   "strings"
    "time"
 )
 
 type Timespec [7][2]int
 
 var (
-   ErrMalformed = errors.New("In: malformed timespec")
+   ErrMalformed = errors.New("Malformed timespec")
    specRe = regexp.MustCompile(`(?:(\w{3})(?:-(\w{3}))? )?(\d{2})-(\d{2})`)
    dayMap = map[string]time.Weekday{
       "Sun": time.Sunday,
@@ -25,8 +26,6 @@ var (
 )
 
 func New(spec string) (*Timespec, error) {
-   fmt.Printf("spec %s\n", spec)
-
    matches := specRe.FindAllStringSubmatch(spec, -1)
    if matches == nil {
       return nil, ErrMalformed
@@ -35,6 +34,10 @@ func New(spec string) (*Timespec, error) {
    var hours Timespec
 
    for _, match := range matches {
+      if len(match) != 5 {
+         return nil, ErrMalformed
+      }
+
       startHour, err := strconv.Atoi(match[len(match)-2])
       if err != nil || startHour < 0 || startHour > 23 {
          return nil, ErrMalformed
@@ -45,16 +48,22 @@ func New(spec string) (*Timespec, error) {
          return nil, ErrMalformed
       }
 
-      startDayStr := "Sun"
-      endDayStr   := "Sat"
+      startDayStr := match[1]
+      endDayStr   := match[2]
 
-      switch len(match) {
-      case 3:
-         startDayStr = match[1]
-         endDayStr   = startDayStr
-      case 4:
-         startDayStr = match[1]
-         endDayStr   = match[2]
+      if startDayStr == "" {
+         if endDayStr == "" {
+            startDayStr = "Sun"
+            endDayStr = "Sat"
+         }
+      } else {
+         if endDayStr == startDayStr {
+            return nil, ErrMalformed
+         }
+
+         if endDayStr == "" {
+            endDayStr = startDayStr
+         }
       }
 
       startDay, ok := dayMap[startDayStr]
@@ -66,17 +75,30 @@ func New(spec string) (*Timespec, error) {
       if !ok {
          return nil, ErrMalformed
       }
-
-      for day := startDay; day <= endDay; day = (day + 1) % 8 {
-fmt.Printf("startDay=%d endDay=%d\n", startDay, endDay)
+      day := startDay
+      for {
          hours[day][0] = startHour
          hours[day][1] = endHour
-      }
 
-      fmt.Printf("hours=%+v\n", hours)
+         if day == endDay {
+            break
+         }
+
+         day = (day + 1) % 7
+      }
    }
 
    return &hours, nil
+}
+
+func (hours *Timespec) String() (string) {
+   var elems []string
+
+   for i, day := range hours {
+      elems = append(elems, fmt.Sprintf("%s %02d-%02d", time.Weekday(i), day[0], day[1]))
+   }
+
+   return strings.Join(elems, ", ")
 }
 
 func (hours *Timespec) In(t *time.Time, timezone *time.Location) bool {

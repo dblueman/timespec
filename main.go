@@ -8,6 +8,8 @@ import (
    "time"
 )
 
+type Timespec [7][2]int
+
 var (
    ErrMalformed = errors.New("In: malformed timespec")
    specRe = regexp.MustCompile(`(?:(\w{3})(?:-(\w{3}))? )?(\d{2})-(\d{2})`)
@@ -22,26 +24,29 @@ var (
    }
 )
 
-func In(t time.Time, spec string, timezone *time.Location) (bool, error) {
+func New(spec string) (*Timespec, error) {
    fmt.Printf("spec %s\n", spec)
+
    matches := specRe.FindAllStringSubmatch(spec, -1)
    if matches == nil {
-      return false, ErrMalformed
+      return nil, ErrMalformed
    }
+
+   var hours Timespec
 
    for _, match := range matches {
       startHour, err := strconv.Atoi(match[len(match)-2])
       if err != nil || startHour < 0 || startHour > 23 {
-         return false, ErrMalformed
+         return nil, ErrMalformed
       }
 
       endHour, err := strconv.Atoi(match[len(match)-1])
       if err != nil || endHour < 0 || endHour > 23 {
-         return false, ErrMalformed
+         return nil, ErrMalformed
       }
 
-      startDayStr := "Mon"
-      endDayStr   := "Sun"
+      startDayStr := "Sun"
+      endDayStr   := "Sat"
 
       switch len(match) {
       case 3:
@@ -54,16 +59,26 @@ func In(t time.Time, spec string, timezone *time.Location) (bool, error) {
 
       startDay, ok := dayMap[startDayStr]
       if !ok {
-         return false, ErrMalformed
+         return nil, ErrMalformed
       }
 
       endDay, ok := dayMap[endDayStr]
       if !ok {
-         return false, ErrMalformed
+         return nil, ErrMalformed
       }
 
-      fmt.Printf("startDay=%d endDay=%d startHour=%02d endHour=%02d\n", startDay, endDay, startHour, endHour)
+      for day := startDay; day <= endDay; day = (day + 1) % 8 {
+fmt.Printf("startDay=%d endDay=%d\n", startDay, endDay)
+         hours[day][0] = startHour
+         hours[day][1] = endHour
+      }
+
+      fmt.Printf("hours=%+v\n", hours)
    }
 
-   return false, nil
+   return &hours, nil
+}
+
+func (hours *Timespec) In(t *time.Time, timezone *time.Location) bool {
+   return false
 }

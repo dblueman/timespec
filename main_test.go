@@ -40,6 +40,16 @@ func TestIn(t *testing.T) {
       {"08-20", time.Date(2024, time.October, 13,  8, 40, 0, 0, time.UTC), true},
       {"08-20", time.Date(2024, time.October, 13, 19, 40, 0, 0, time.UTC), true},
       {"08-20", time.Date(2024, time.October, 13, 20, 40, 0, 0, time.UTC), false},
+
+      {"23-00", time.Date(2024, time.October, 13, 22, 59, 0, 0, time.UTC), false},
+      {"23-00", time.Date(2024, time.October, 13, 23, 00, 0, 0, time.UTC), true},
+      {"23-00", time.Date(2024, time.October, 13, 23, 59, 0, 0, time.UTC), true},
+      {"23-00", time.Date(2024, time.October, 14, 00, 00, 0, 0, time.UTC), false},
+
+      {"00-01", time.Date(2024, time.October, 13, 23, 59, 0, 0, time.UTC), false},
+      {"00-01", time.Date(2024, time.October, 14, 00, 00, 0, 0, time.UTC), true},
+      {"00-01", time.Date(2024, time.October, 14, 00, 59, 0, 0, time.UTC), true},
+      {"00-01", time.Date(2024, time.October, 14, 01, 00, 0, 0, time.UTC), false},
    }
 
    for _, test := range tests {

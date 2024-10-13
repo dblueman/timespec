@@ -105,9 +105,10 @@ func (hours *Timespec) In(t time.Time) bool {
    hour := t.Hour()
    day := hours[t.Weekday()]
 
-   if hour >= day[0] && hour < day[1] {
-      return true
+   // handle wrapped hours
+   if day[1] < day[0] {
+      return hour >= day[0] || hour < day[1]
    }
 
-   return false
+   return hour >= day[0] && hour < day[1]
 }

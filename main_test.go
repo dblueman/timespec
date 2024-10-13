@@ -2,6 +2,7 @@ package timespec
 
 import (
    "testing"
+   "time"
 )
 
 func TestNew(t *testing.T) {
@@ -25,6 +26,32 @@ func TestNew(t *testing.T) {
 
       if out != test.expected {
          t.Errorf("got %s but expected %s", out, test.expected)
+      }
+   }
+}
+
+func TestIn(t *testing.T) {
+   tests := []struct{
+      desc     string
+      t        time.Time
+      expected bool
+   }{
+      {"08-20", time.Date(2024, time.October, 13,  7, 40, 0, 0, time.UTC), false},
+      {"08-20", time.Date(2024, time.October, 13,  8, 40, 0, 0, time.UTC), true},
+      {"08-20", time.Date(2024, time.October, 13, 19, 40, 0, 0, time.UTC), true},
+      {"08-20", time.Date(2024, time.October, 13, 20, 40, 0, 0, time.UTC), false},
+   }
+
+   for _, test := range tests {
+      hours, err := New(test.desc)
+      if err != nil {
+         t.Error(err)
+         continue
+      }
+
+      out := hours.In(test.t)
+      if out != test.expected {
+         t.Errorf("got %v but expected %v for '%s' %s", out, test.expected, test.desc, test.t)
       }
    }
 }

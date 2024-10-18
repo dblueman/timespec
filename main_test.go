@@ -1,6 +1,7 @@
 package timespec
 
 import (
+   "errors"
    "testing"
    "time"
 )
@@ -28,6 +29,26 @@ func TestNew(t *testing.T) {
          t.Errorf("got %s but expected %s", out, test.expected)
       }
    }
+}
+
+func FuzzNew(f *testing.F) {
+   f.Add("08-20")
+   f.Add("06-23")
+   f.Add("23-00")
+   f.Add("24-00")
+   f.Add("Sat-Sun 10-00, Mon-Fri 08-00")
+   f.Add("Sat 10-22, Sun 10-18, Mon-Tue 08-20, Wed-Fri 08-22")
+
+   f.Fuzz(func(t *testing.T, in string) {
+      out, err := New(in)
+      if err != nil {
+         if !errors.Is(err, ErrMalformed) {
+            t.Error(err)
+         }
+      } else if len(out) == 0 {
+         t.Error(err)
+      }
+   })
 }
 
 func TestIn(t *testing.T) {
